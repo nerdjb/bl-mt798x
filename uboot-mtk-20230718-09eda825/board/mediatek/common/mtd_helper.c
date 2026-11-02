@@ -1077,6 +1077,36 @@ int ubi_upgrade_volume(const char *name, const void *data, size_t size,
 	return update_ubi_volume_custom(name, -1, data, size, reserved_size,
 					dynamic);
 }
+
+int mtd_upgrade_ubi_volume(const char *name, const void *data, size_t size,
+			   bool dynamic)
+{
+	struct mtd_info *mtd;
+	int ret;
+
+	gen_mtd_probe_devices();
+
+	mtd = get_mtd_device_nm(PART_UBI_NAME);
+	if (IS_ERR_OR_NULL(mtd)) {
+		cprintln(ERROR, "*** Partition %s does not exist ***", PART_UBI_NAME);
+		return -ENODEV;
+	}
+
+	put_mtd_device(mtd);
+
+	ret = mount_ubi(mtd, false);
+	if (ret)
+		return ret;
+
+	/*
+	 * rootfs_data uses all remaining space, so remove it before creating
+	 * or recreating a (usually static) volume such as fip.
+	 */
+	if (ubi_find_volume(PART_ROOTFS_DATA_NAME))
+		remove_ubi_volume(PART_ROOTFS_DATA_NAME);
+
+	return update_ubi_volume_custom(name, -1, data, size, size, dynamic);
+}
 #endif /* CONFIG_CMD_UBI */
 
 int mtd_upgrade_image(const void *data, size_t size)

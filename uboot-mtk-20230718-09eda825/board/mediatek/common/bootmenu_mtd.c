@@ -102,7 +102,23 @@ static int write_bl2(void *priv, const struct data_part_entry *dpe,
 static int write_fip(void *priv, const struct data_part_entry *dpe,
 		     const void *data, size_t size)
 {
-	return write_part("fip", data, size, true);
+	struct mtd_info *mtd;
+
+	gen_mtd_probe_devices();
+
+	mtd = get_mtd_device_nm("fip");
+	if (!IS_ERR_OR_NULL(mtd)) {
+		put_mtd_device(mtd);
+		return write_part("fip", data, size, true);
+	}
+
+#ifdef CONFIG_CMD_UBI
+	cprintln(CAUTION, "*** No raw 'fip' partition, writing UBI volume ***");
+	return mtd_upgrade_ubi_volume("fip", data, size, false);
+#else
+	cprintln(ERROR, "*** MTD partition 'fip' not found! ***");
+	return -ENODEV;
+#endif
 }
 
 #ifdef CONFIG_MTK_FIP_SUPPORT

@@ -30,6 +30,8 @@ int boot_from_mtd(struct mtd_info *mtd, u64 offset);
 void gen_mtd_probe_devices(void);
 int ubi_upgrade_volume(const char *name, const void *data, size_t size,
 		       uint64_t reserved_size, bool dynamic);
+int mtd_upgrade_ubi_volume(const char *name, const void *data, size_t size,
+			   bool dynamic);
 int mtd_upgrade_image(const void *data, size_t size);
 int mtd_boot_image(void);
 
